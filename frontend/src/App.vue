@@ -12,28 +12,50 @@
       </div>
     </header>
 
-    <StatusBar />
+    <nav class="tabs">
+      <button 
+        :class="{ active: activeTab === 'catalog' }" 
+        @click="activeTab = 'catalog'"
+      >
+        📊 Catalog
+      </button>
+      <button 
+        :class="{ active: activeTab === 'analysis' }" 
+        @click="activeTab = 'analysis'"
+      >
+        📈 Analysis
+      </button>
+    </nav>
 
-    <section class="grid">
-      <FiltersPanel />
-      <StatsPanel />
-    </section>
+    <div v-show="activeTab === 'catalog'">
+      <StatusBar />
+      <section class="grid">
+        <FiltersPanel />
+        <StatsPanel />
+      </section>
+      <ObjectsTable />
+      <PaginationControls />
+    </div>
 
-    <ObjectsTable />
-    <PaginationControls />
+    <div v-show="activeTab === 'analysis'">
+      <AnalysisView />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount } from "vue";
+import { onMounted, onBeforeUnmount, ref } from "vue";
 import FiltersPanel from "./components/FiltersPanel.vue";
 import StatsPanel from "./components/StatsPanel.vue";
 import ObjectsTable from "./components/ObjectsTable.vue";
 import PaginationControls from "./components/PaginationControls.vue";
 import StatusBar from "./components/StatusBar.vue";
+import AnalysisView from "./components/AnalysisView.vue";
 import { useCatalogStore } from "./stores/catalog";
 
 const catalog = useCatalogStore();
+const activeTab = ref<'catalog' | 'analysis'>('catalog');
+
 const handleShortcut = (event: KeyboardEvent) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "r") {
     event.preventDefault();
@@ -86,6 +108,31 @@ h1 {
 .hero-actions a {
   color: var(--accent);
   text-decoration: none;
+}
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.2);
+  padding-bottom: 0.5rem;
+}
+.tabs button {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+  font-family: 'Courier New', monospace;
+}
+.tabs button:hover {
+  color: var(--accent);
+}
+.tabs button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 .grid {
   display: flex;

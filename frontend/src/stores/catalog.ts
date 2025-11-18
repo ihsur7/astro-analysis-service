@@ -10,6 +10,10 @@ interface CatalogState {
   pages: number;
   loading: boolean;
   error: string | null;
+  magnitudeDistribution: { bins: number[]; counts: number[] } | null;
+  spectralBreakdown: Record<string, number> | null;
+  distanceDistribution: { bins: number[]; counts: number[] } | null;
+  correlation: { magnitudes: number[]; distances: number[] } | null;
 }
 
 const defaultFilters: FiltersPayload = {
@@ -32,7 +36,11 @@ export const useCatalogStore = defineStore("catalog", {
     total: 0,
     pages: 0,
     loading: true,
-    error: null
+    error: null,
+    magnitudeDistribution: null,
+    spectralBreakdown: null,
+    distanceDistribution: null,
+    correlation: null
   }),
   actions: {
     setFilters(partial: Partial<FiltersPayload>) {
@@ -57,6 +65,30 @@ export const useCatalogStore = defineStore("catalog", {
       } finally {
         this.loading = false;
       }
+    },
+    async fetchMagnitudeDistribution(bins = 10) {
+      const response = await axios.get<{ bins: number[]; counts: number[] }>(
+        "/analysis/magnitude-distribution",
+        { params: { bins } }
+      );
+      this.magnitudeDistribution = response.data;
+    },
+    async fetchSpectralBreakdown() {
+      const response = await axios.get<Record<string, number>>("/analysis/spectral-breakdown");
+      this.spectralBreakdown = response.data;
+    },
+    async fetchDistanceDistribution(bins = 10) {
+      const response = await axios.get<{ bins: number[]; counts: number[] }>(
+        "/analysis/distance-distribution",
+        { params: { bins } }
+      );
+      this.distanceDistribution = response.data;
+    },
+    async fetchCorrelation() {
+      const response = await axios.get<{ magnitudes: number[]; distances: number[] }>(
+        "/analysis/magnitude-distance-correlation"
+      );
+      this.correlation = response.data;
     },
     resetFilters() {
       this.filters = { ...defaultFilters };

@@ -16,7 +16,15 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from .data_loader import load_objects
 from .logging_config import configure_logging
 from .models import HealthResponse, PaginatedObjectsResponse, ReadinessResponse, StatsResponse
-from .service import compute_stats, filter_objects, paginate_objects
+from .service import (
+    compute_stats,
+    filter_objects,
+    get_distance_distribution,
+    get_magnitude_distance_correlation,
+    get_magnitude_distribution,
+    get_spectral_type_breakdown,
+    paginate_objects,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIST = BASE_DIR / "static" / "app"
@@ -131,3 +139,27 @@ def readiness() -> ReadinessResponse:
         version=app.version,
         dataset_count=len(dataset),
     )
+
+
+@app.get("/analysis/magnitude-distribution", tags=["Analysis"])
+def magnitude_distribution(bins: int = Query(10, ge=5, le=50, description="Number of histogram bins")):
+    """Get magnitude distribution histogram data."""
+    return get_magnitude_distribution(bins=bins)
+
+
+@app.get("/analysis/spectral-breakdown", tags=["Analysis"])
+def spectral_breakdown():
+    """Get count of objects by spectral type."""
+    return get_spectral_type_breakdown()
+
+
+@app.get("/analysis/distance-distribution", tags=["Analysis"])
+def distance_distribution(bins: int = Query(10, ge=5, le=50, description="Number of histogram bins")):
+    """Get distance distribution histogram data."""
+    return get_distance_distribution(bins=bins)
+
+
+@app.get("/analysis/magnitude-distance-correlation", tags=["Analysis"])
+def magnitude_distance_correlation():
+    """Get magnitude vs distance scatter plot data."""
+    return get_magnitude_distance_correlation()
