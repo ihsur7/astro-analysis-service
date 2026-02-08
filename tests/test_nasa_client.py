@@ -1,3 +1,4 @@
+"""Tests for the NASA Exoplanet Archive client and data conversion."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,6 +11,7 @@ from astro_analysis_service.nasa_client import DISTANCE_PC_TO_LY, NASAExoplanetC
 
 @pytest.fixture()
 def sample_records():
+    """Return a single-record NASA API payload for testing."""
     return [
         {
             "pl_name": "Kepler-22 b",
@@ -23,6 +25,7 @@ def sample_records():
 
 
 def test_nasa_client_uses_cache(tmp_path: Path, sample_records):
+    """Client reads from disk cache when it is fresh."""
     cache_path = tmp_path / "cache.json"
     client = NASAExoplanetClient(cache_path=cache_path, ttl_seconds=60)
 
@@ -45,6 +48,7 @@ def test_nasa_client_uses_cache(tmp_path: Path, sample_records):
 
 
 def test_api_record_conversion(sample_records):
+    """Raw API records are correctly converted to AstronomicalObject."""
     obj = _api_record_to_object(sample_records[0], idx=1)
     assert obj is not None
     assert obj.name == "Kepler-22 b"

@@ -53,4 +53,5 @@ def _load_from_nasa(force_refresh: bool = False) -> List[AstronomicalObject]:
 
 @lru_cache(maxsize=1)
 def load_objects(*, force_refresh: bool = False) -> List[AstronomicalObject]:
+    """Return the full list of parsed astronomical objects, cached in memory."""
     return _load_from_nasa(force_refresh=force_refresh)

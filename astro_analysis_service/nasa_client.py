@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, List, Sequence
@@ -62,32 +63,46 @@ class NASAExoplanetClient:
 
     # ------------------------------------------------------------------
     def _fetch_remote(self) -> Iterable[dict[str, Any]]:
-        import time
+        """Fetch exoplanet data from the NASA TAP endpoint with retries."""
         query = QUERY_TEMPLATE.format(limit=self.max_records)
-        LOGGER.info("Fetching exoplanet data from NASA (limit=%s)", self.max_records)
-        
+        LOGGER.info(
+            "Fetching exoplanet data from NASA (limit=%s)",
+            self.max_records,
+        )
+
         for attempt in range(MAX_RETRIES):
             try:
                 with httpx.Client(timeout=self.http_timeout) as client:
-                    response = client.get(EXOPLANET_ENDPOINT, params={"query": query, "format": "json"})
+                    response = client.get(
+                        EXOPLANET_ENDPOINT,
+                        params={"query": query, "format": "json"},
+                    )
                     response.raise_for_status()
                     payload = response.json()
                 LOGGER.info("Fetched %s rows from NASA", len(payload))
                 return payload
-            except (httpx.TimeoutException, httpx.ConnectError) as exc:
+            except (
+                httpx.TimeoutException,
+                httpx.ConnectError,
+            ):
                 if attempt < MAX_RETRIES - 1:
                     wait_time = RETRY_BACKOFF_SECONDS * (2 ** attempt)
                     LOGGER.warning(
-                        "NASA fetch attempt %s/%s failed, retrying in %ss",
+                        "NASA fetch attempt %s/%s failed, "
+                        "retrying in %ss",
                         attempt + 1,
                         MAX_RETRIES,
                         wait_time,
-                        exc_info=True
+                        exc_info=True,
                     )
                     time.sleep(wait_time)
                 else:
-                    LOGGER.error("NASA fetch failed after %s attempts", MAX_RETRIES)
+                    LOGGER.error(
+                        "NASA fetch failed after %s attempts",
+                        MAX_RETRIES,
+                    )
                     raise
+        return []  # unreachable; satisfies pylint consistent-return
 
     def _load_cache(self) -> List[dict[str, Any]] | None:
         if not self.cache_path.exists():
@@ -103,15 +118,21 @@ class NASAExoplanetClient:
         if not expires_at:
             return None
         if datetime.now(timezone.utc) >= datetime.fromisoformat(expires_at):
-            LOGGER.info("Cache at %s expired", self.cache_path)
+            LOGGER.info(
+                "Cache at %s expired", self.cache_path,
+            )
             return None
         return cache_payload.get("records", [])
 
     def _write_cache(self, records: Sequence[dict[str, Any]]) -> None:
+        """Persist records to the JSON cache file."""
+        now = datetime.now(timezone.utc)
         payload = {
             "records": list(records),
-            "fetched_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(seconds=self.ttl_seconds)).isoformat(),
+            "fetched_at": now.isoformat(),
+            "expires_at": (
+                now + timedelta(seconds=self.ttl_seconds)
+            ).isoformat(),
         }
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
         with self.cache_path.open("w", encoding="utf-8") as handle:

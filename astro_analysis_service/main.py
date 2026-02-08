@@ -46,7 +46,8 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_sch
 
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def log_requests(request: Request, call_next):  # noqa: D103
+    """Attach request-id and timing headers to every response."""
     request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
     start = time.perf_counter()
     response = await call_next(request)
@@ -70,6 +71,7 @@ async def log_requests(request: Request, call_next):
 
 @app.get("/", include_in_schema=False)
 def dashboard(request: Request):
+    """Serve the SPA frontend or fall back to the Jinja2 terminal UI."""
     if FRONTEND_INDEX.exists():
         return FileResponse(FRONTEND_INDEX)
     return templates.TemplateResponse("terminal.html", {"request": request})
@@ -77,21 +79,37 @@ def dashboard(request: Request):
 
 @app.get("/ui", include_in_schema=False, response_class=HTMLResponse)
 def legacy_dashboard(request: Request):
+    """Serve the legacy terminal-style dashboard."""
     return templates.TemplateResponse("terminal.html", {"request": request})
 
 
 @app.get("/objects", response_model=PaginatedObjectsResponse)
-def list_objects(
-    magnitude_min: float | None = Query(None, description="Include stars with magnitude >= this value (dimmer)."),
-    magnitude_max: float | None = Query(None, description="Include stars with magnitude <= this value (brighter)."),
-    distance_min: float | None = Query(None, description="Include stars farther than this distance (light years)."),
-    distance_max: float | None = Query(None, description="Include stars closer than this distance (light years)."),
-    constellation: str | None = Query(None, description="Exact constellation code (case-insensitive)."),
-    spectral_type: str | None = Query(None, description="Exact spectral class (case-insensitive)."),
-    search: str | None = Query(None, description="Substring match against name or constellation."),
+def list_objects(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    magnitude_min: float | None = Query(
+        None, description="Include stars with magnitude >= this value.",
+    ),
+    magnitude_max: float | None = Query(
+        None, description="Include stars with magnitude <= this value.",
+    ),
+    distance_min: float | None = Query(
+        None, description="Minimum distance in light years.",
+    ),
+    distance_max: float | None = Query(
+        None, description="Maximum distance in light years.",
+    ),
+    constellation: str | None = Query(
+        None, description="Exact constellation code (case-insensitive).",
+    ),
+    spectral_type: str | None = Query(
+        None, description="Exact spectral class (case-insensitive).",
+    ),
+    search: str | None = Query(
+        None, description="Substring match against name or constellation.",
+    ),
     page: int = Query(1, ge=1, description="Page number (1-indexed)."),
-    page_size: int = Query(25, ge=1, le=100, description="Number of rows per page."),
+    page_size: int = Query(25, ge=1, le=100, description="Rows per page."),
 ):
+    """Return a paginated, filtered list of astronomical objects."""
     filtered = filter_objects(
         magnitude_min=magnitude_min,
         magnitude_max=magnitude_max,
@@ -113,16 +131,23 @@ def list_objects(
 
 @app.get("/stats", response_model=StatsResponse)
 def stats():
+    """Return statistical summary of the full dataset."""
     return compute_stats()
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 def health() -> HealthResponse:
-    return HealthResponse(status="ok", service="astro-analysis-service", version=app.version)
+    """Liveness probe."""
+    return HealthResponse(
+        status="ok",
+        service="astro-analysis-service",
+        version=app.version,
+    )
 
 
 @app.get("/ready", response_model=ReadinessResponse, tags=["Health"])
 def readiness() -> ReadinessResponse:
+    """Readiness probe verifying dataset availability."""
     try:
         dataset = load_objects()
     except Exception as exc:  # pragma: no cover - surfaced through response
@@ -142,7 +167,9 @@ def readiness() -> ReadinessResponse:
 
 
 @app.get("/analysis/magnitude-distribution", tags=["Analysis"])
-def magnitude_distribution(bins: int = Query(10, ge=5, le=50, description="Number of histogram bins")):
+def magnitude_distribution(
+    bins: int = Query(10, ge=5, le=50, description="Number of bins"),
+):
     """Get magnitude distribution histogram data."""
     return get_magnitude_distribution(bins=bins)
 
@@ -154,7 +181,9 @@ def spectral_breakdown():
 
 
 @app.get("/analysis/distance-distribution", tags=["Analysis"])
-def distance_distribution(bins: int = Query(10, ge=5, le=50, description="Number of histogram bins")):
+def distance_distribution(
+    bins: int = Query(10, ge=5, le=50, description="Number of bins"),
+):
     """Get distance distribution histogram data."""
     return get_distance_distribution(bins=bins)
 

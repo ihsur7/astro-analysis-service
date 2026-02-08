@@ -20,5 +20,3 @@ class Settings:
 
 settings = Settings()
 settings.nasa_cache_path.parent.mkdir(parents=True, exist_ok=True)
-
-# 

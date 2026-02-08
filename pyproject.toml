@@ -23,8 +23,20 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.2.0",
-    "httpx>=0.28.0"
+    "httpx>=0.28.0",
+    "pylint>=3.2.0"
 ]
 
 [tool.setuptools.packages.find]
 include = ["astro_analysis_service*"]
+
+[tool.pylint.main]
+max-line-length = 100
+
+[tool.pylint."messages control"]
+disable = [
+    "import-error",
+    "too-few-public-methods",
+    "redefined-outer-name",
+    "protected-access",
+]

@@ -10,7 +10,7 @@ from .data_loader import load_objects
 from .models import AstronomicalObject, StatsResponse
 
 
-def filter_objects(
+def filter_objects(  # pylint: disable=too-many-arguments,too-many-positional-arguments
     magnitude_min: float | None = None,
     magnitude_max: float | None = None,
     distance_min: float | None = None,
@@ -19,12 +19,13 @@ def filter_objects(
     spectral_type: str | None = None,
     search: str | None = None,
 ) -> List[AstronomicalObject]:
+    """Filter the dataset by magnitude, distance, spectral type, etc."""
     objects = load_objects()
     constellation_lower = constellation.lower() if constellation else None
     spectral_lower = spectral_type.lower() if spectral_type else None
     search_lower = search.lower() if search else None
 
-    def passes_filters(obj: AstronomicalObject) -> bool:
+    def passes_filters(obj: AstronomicalObject) -> bool:  # pylint: disable=too-many-return-statements
         if magnitude_min is not None and obj.magnitude < magnitude_min:
             return False
         if magnitude_max is not None and obj.magnitude > magnitude_max:
@@ -49,6 +50,7 @@ def paginate_objects(
     page: int,
     page_size: int,
 ) -> Tuple[List[AstronomicalObject], int, int]:
+    """Return a (items, total, pages) tuple for the requested page."""
     total = len(objects)
     if total == 0:
         return [], 0, 0
@@ -62,7 +64,10 @@ def paginate_objects(
     return list(objects[start:end]), total, pages
 
 
-def compute_stats(objects: Iterable[AstronomicalObject] | None = None) -> StatsResponse:
+def compute_stats(
+    objects: Iterable[AstronomicalObject] | None = None,
+) -> StatsResponse:
+    """Compute magnitude-based statistics for the dataset."""
     dataset = list(objects) if objects is not None else load_objects()
     if not dataset:
         return StatsResponse(
