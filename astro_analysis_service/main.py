@@ -18,6 +18,7 @@ from .__version__ import __version__
 from .data_loader import load_objects, clear_cache
 from .logging_config import configure_logging
 from .models import HealthResponse, PaginatedObjectsResponse, ReadinessResponse, StatsResponse
+from .nasa_client import NASA_CLIENT
 from .service import (
     compute_stats,
     filter_objects,
@@ -205,30 +206,29 @@ class RefreshDataRequest(BaseModel):
 def refresh_data(request: RefreshDataRequest):
     """Refresh dataset with a custom record limit."""
     limit = request.limit
-    
+
     if limit < 10 or limit > 1000:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Limit must be between 10 and 1000"
         )
-    
+
     try:
         # Update the NASA client's max records
-        from .nasa_client import NASA_CLIENT
         NASA_CLIENT.max_records = limit
-        
+
         # Clear the cache and force refresh
         clear_cache()
         dataset = load_objects(force_refresh=True)
-        
+
         DATASET_GAUGE.set(len(dataset))
-        
+
         logger.info(
             "Data refreshed with limit=%s, loaded %s objects",
             limit,
             len(dataset)
         )
-        
+
         return {
             "status": "success",
             "limit": limit,
