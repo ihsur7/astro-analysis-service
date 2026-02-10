@@ -17,29 +17,38 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Singularity
-      uses: eWaterCycle/setup-singularity@v7
+    - name: Set up Singularity/Apptainer
+      uses: eWaterCycle/setup-apptainer@v2
       with:
-        singularity-version: 3.11.0
+        apptainer-version: 1.2.5
 
     - name: Build Singularity image from Docker
       run: |
         # Build Docker image first
         docker build -t astro-analysis-service:latest .
         
-        # Convert to Singularity
-        sudo singularity build astro-analysis.sif docker-daemon://astro-analysis-service:latest
+        # Convert to Singularity using apptainer (current name for singularity)
+        apptainer build astro-analysis.sif docker-daemon://astro-analysis-service:latest
 
     - name: Test Singularity image
       run: |
         # Basic test - check if image runs
-        singularity exec astro-analysis.sif python --version
-        singularity exec astro-analysis.sif pip list
+        apptainer exec astro-analysis.sif python --version
+        apptainer exec astro-analysis.sif pip list | grep fastapi
+
+    - name: Get version tag
+      id: version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/v* ]]; then
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=latest" >> $GITHUB_OUTPUT
+        fi
 
     - name: Upload Singularity image as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: singularity-image
+        name: astro-analysis-${{ steps.version.outputs.VERSION }}.sif
         path: astro-analysis.sif
         retention-days: 30
 
