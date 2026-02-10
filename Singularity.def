@@ -1,0 +1,85 @@
+Bootstrap: docker
+From: python:3.11-slim
+
+%files
+    requirements.txt /app/requirements.txt
+    app /app/app
+    static /app/static
+    templates /app/templates
+    data /app/data
+
+%post
+    apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        && rm -rf /var/lib/apt/lists/*
+    
+    cd /app
+    pip install --no-cache-dir --upgrade pip
+    pip install --no-cache-dir -r requirements.txt
+    
+    mkdir -p /app/logs
+    
+    echo "=== Python Version ==="
+    python --version
+    echo "=== Installed Packages ==="
+    pip list | grep -E "(fastapi|uvicorn|pandas|pytest)"
+    
+    chmod -R 755 /app
+
+%environment
+    export PYTHONPATH=/app
+    export PORT=8000
+    export PYTHONUNBUFFERED=1
+
+%runscript
+    cd /app
+    echo "Starting astro-analysis-service on port ${PORT:-8000}"
+    echo "Web UI available at: http://localhost:${PORT:-8000}/ui"
+    echo "API docs at: http://localhost:${PORT:-8000}/docs"
+    exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+
+%startscript
+    cd /app
+    exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+
+%test
+    python --version
+    pip list | grep fastapi
+    pip list | grep uvicorn
+    pip list | grep pandas
+    pip list | grep pytest
+    
+    test -d /app/app
+    test -d /app/static
+    test -d /app/templates
+    test -d /app/data
+    test -f /app/app/main.py
+    
+    echo "All tests passed!"
+
+%labels
+    Author "Astro Analysis Service"
+    Version "1.0.0"
+    Description "FastAPI microservice for astronomical data analysis with terminal-style web UI"
+    Repository "https://github.com/yourusername/astro-analysis-service"
+
+%help
+    ========================================
+    Astro Analysis Service
+    ========================================
+    
+    FastAPI microservice with CSV-backed dataset for astronomical data analysis.
+    Features a terminal-style web UI and comprehensive REST API.
+    
+    USAGE:
+        apptainer run astro-analysis.sif
+        PORT=8080 apptainer run astro-analysis.sif
+        apptainer run --bind ./custom-data:/app/data astro-analysis.sif
+    
+    ENDPOINTS:
+        - Web UI:      http://localhost:8000/ui
+        - API Docs:    http://localhost:8000/docs
+        - Health:      http://localhost:8000/health
+        - Filter:      http://localhost:8000/filter
+        - Statistics:  http://localhost:8000/statistics
+        - Metrics:     http://localhost:8000/metrics

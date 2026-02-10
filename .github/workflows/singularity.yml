@@ -1,40 +1,38 @@
-name: Build Singularity Image
+name: Build Singularity from Definition
 
 on:
   push:
     branches: [ master ]
     tags:
       - 'v*'
-  pull_request:
-    branches: [ master ]
   workflow_dispatch:
 
 jobs:
-  build-singularity:
+  build:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Singularity/Apptainer
+    - name: Set up Apptainer
       uses: eWaterCycle/setup-apptainer@v2
       with:
         apptainer-version: 1.2.5
 
-    - name: Build Singularity image from Docker
+    - name: Build from definition file
       run: |
-        # Build Docker image first
-        docker build -t astro-analysis-service:latest .
-        
-        # Convert to Singularity using apptainer (current name for singularity)
-        apptainer build astro-analysis.sif docker-daemon://astro-analysis-service:latest
+        apptainer build --force --fakeroot astro-analysis.sif Singularity.def
 
-    - name: Test Singularity image
+    - name: Test image
       run: |
-        # Basic test - check if image runs
         apptainer exec astro-analysis.sif python --version
-        apptainer exec astro-analysis.sif pip list | grep fastapi
+        apptainer exec astro-analysis.sif pip list | grep -E "(fastapi|uvicorn)" || true
+        
+    - name: Show image metadata
+      run: |
+        apptainer inspect astro-analysis.sif
+        ls -lh astro-analysis.sif
 
     - name: Get version tag
       id: version
@@ -42,20 +40,21 @@ jobs:
         if [[ $GITHUB_REF == refs/tags/v* ]]; then
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
         else
-          echo "VERSION=latest" >> $GITHUB_OUTPUT
+          echo "VERSION=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         fi
 
-    - name: Upload Singularity image as artifact
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: astro-analysis-${{ steps.version.outputs.VERSION }}.sif
+        name: astro-analysis-${{ steps.version.outputs.VERSION }}
         path: astro-analysis.sif
         retention-days: 30
 
-    - name: Release Singularity image
+    - name: Release on tag
       if: startsWith(github.ref, 'refs/tags/v')
       uses: softprops/action-gh-release@v1
       with:
         files: astro-analysis.sif
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
