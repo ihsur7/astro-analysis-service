@@ -14,6 +14,7 @@ interface CatalogState {
   spectralBreakdown: Record<string, number> | null;
   distanceDistribution: { bins: number[]; counts: number[] } | null;
   correlation: { magnitudes: number[]; distances: number[] } | null;
+  maxRecords: number;
 }
 
 const defaultFilters: FiltersPayload = {
@@ -28,6 +29,29 @@ const defaultFilters: FiltersPayload = {
   page_size: 10
 };
 
+const STORAGE_KEY = 'astro-settings';
+
+function loadMaxRecords(): number {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const settings = JSON.parse(stored);
+      return settings.maxRecords || 150;
+    }
+  } catch (e) {
+    console.warn('Failed to load settings from localStorage', e);
+  }
+  return 150;
+}
+
+function saveMaxRecords(value: number) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ maxRecords: value }));
+  } catch (e) {
+    console.warn('Failed to save settings to localStorage', e);
+  }
+}
+
 export const useCatalogStore = defineStore("catalog", {
   state: (): CatalogState => ({
     filters: { ...defaultFilters },
@@ -40,7 +64,8 @@ export const useCatalogStore = defineStore("catalog", {
     magnitudeDistribution: null,
     spectralBreakdown: null,
     distanceDistribution: null,
-    correlation: null
+    correlation: null,
+    maxRecords: loadMaxRecords()
   }),
   actions: {
     setFilters(partial: Partial<FiltersPayload>) {
@@ -93,6 +118,21 @@ export const useCatalogStore = defineStore("catalog", {
     resetFilters() {
       this.filters = { ...defaultFilters };
       this.refresh();
+    },
+    async updateMaxRecords(limit: number) {
+      try {
+        // Trigger backend to refresh data with new limit
+        await axios.post('/admin/refresh-data', { limit });
+        
+        // Save to localStorage
+        this.maxRecords = limit;
+        saveMaxRecords(limit);
+        
+        // Refresh the UI data
+        await this.refresh();
+      } catch (error) {
+        throw new Error(error instanceof Error ? error.message : 'Failed to update max records');
+      }
     }
   }
 });

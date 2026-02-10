@@ -10,11 +10,12 @@ from fastapi import FastAPI, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 from prometheus_client import Gauge
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from .__version__ import __version__
-from .data_loader import load_objects
+from .data_loader import load_objects, clear_cache
 from .logging_config import configure_logging
 from .models import HealthResponse, PaginatedObjectsResponse, ReadinessResponse, StatsResponse
 from .service import (
@@ -193,3 +194,50 @@ def distance_distribution(
 def magnitude_distance_correlation():
     """Get magnitude vs distance scatter plot data."""
     return get_magnitude_distance_correlation()
+
+
+class RefreshDataRequest(BaseModel):
+    """Request body for refreshing data with custom limit."""
+    limit: int
+
+
+@app.post("/admin/refresh-data", tags=["Admin"])
+def refresh_data(request: RefreshDataRequest):
+    """Refresh dataset with a custom record limit."""
+    limit = request.limit
+    
+    if limit < 10 or limit > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Limit must be between 10 and 1000"
+        )
+    
+    try:
+        # Update the NASA client's max records
+        from .nasa_client import NASA_CLIENT
+        NASA_CLIENT.max_records = limit
+        
+        # Clear the cache and force refresh
+        clear_cache()
+        dataset = load_objects(force_refresh=True)
+        
+        DATASET_GAUGE.set(len(dataset))
+        
+        logger.info(
+            "Data refreshed with limit=%s, loaded %s objects",
+            limit,
+            len(dataset)
+        )
+        
+        return {
+            "status": "success",
+            "limit": limit,
+            "count": len(dataset),
+            "message": f"Successfully refreshed data with {len(dataset)} objects"
+        }
+    except Exception as exc:
+        logger.error("Failed to refresh data: %s", str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to refresh data: {str(exc)}"
+        ) from exc

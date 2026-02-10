@@ -13,7 +13,9 @@ export default defineConfig({
       "/objects": apiProxyTarget,
       "/stats": apiProxyTarget,
       "/health": apiProxyTarget,
-      "/ready": apiProxyTarget
+      "/ready": apiProxyTarget,
+      "/analysis": apiProxyTarget,
+      "/admin": apiProxyTarget
     }
   },
   build: {

@@ -55,3 +55,9 @@ def _load_from_nasa(force_refresh: bool = False) -> List[AstronomicalObject]:
 def load_objects(*, force_refresh: bool = False) -> List[AstronomicalObject]:
     """Return the full list of parsed astronomical objects, cached in memory."""
     return _load_from_nasa(force_refresh=force_refresh)
+
+
+def clear_cache() -> None:
+    """Clear the in-memory cache of loaded objects."""
+    load_objects.cache_clear()
+    LOGGER.info("Cleared objects cache")

@@ -24,11 +24,14 @@ const chartData = computed(() => {
       {
         label: 'Exoplanet Hosts',
         data,
-        backgroundColor: 'rgba(0, 255, 65, 0.5)',
-        borderColor: 'rgba(0, 255, 65, 0.8)',
+        backgroundColor: 'rgba(245, 158, 11, 0.5)',
+        borderColor: 'rgba(245, 158, 11, 0.8)',
         borderWidth: 1,
-        pointRadius: 3,
-        pointHoverRadius: 5
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: 'rgba(245, 158, 11, 1)',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2
       }
     ]
   }
@@ -42,11 +45,19 @@ const chartOptions = {
       display: false
     },
     tooltip: {
-      backgroundColor: 'rgba(0, 26, 13, 0.95)',
-      titleColor: '#00ff41',
-      bodyColor: '#00ff41',
-      borderColor: '#00ff41',
+      backgroundColor: 'rgba(26, 26, 26, 0.95)',
+      titleColor: '#f5f5f5',
+      bodyColor: '#d4d4d4',
+      borderColor: '#f59e0b',
       borderWidth: 1,
+      padding: 12,
+      titleFont: {
+        size: 13,
+        weight: '600'
+      },
+      bodyFont: {
+        size: 13
+      },
       callbacks: {
         label: function(context: any) {
           return `Magnitude: ${context.parsed.y.toFixed(2)}, Distance: ${context.parsed.x.toFixed(1)} ly`
@@ -59,26 +70,36 @@ const chartOptions = {
       title: {
         display: true,
         text: 'Distance (light years)',
-        color: '#00ff41'
+        color: '#a3a3a3',
+        font: {
+          size: 12,
+          weight: '600'
+        }
       },
       ticks: {
-        color: '#00cc33'
+        color: '#64748b'
       },
       grid: {
-        color: 'rgba(0, 255, 65, 0.1)'
+        color: 'rgba(45, 53, 72, 0.5)',
+        drawBorder: false
       }
     },
     y: {
       title: {
         display: true,
         text: 'Apparent Magnitude (lower = brighter)',
-        color: '#00ff41'
+        color: '#a3a3a3',
+        font: {
+          size: 12,
+          weight: '600'
+        }
       },
       ticks: {
-        color: '#00cc33'
+        color: '#64748b'
       },
       grid: {
-        color: 'rgba(0, 255, 65, 0.1)'
+        color: 'rgba(45, 53, 72, 0.5)',
+        drawBorder: false
       },
       reverse: false
     }
@@ -97,12 +118,14 @@ const chartOptions = {
 .chart-container {
   height: 400px;
   position: relative;
+  padding: 0.5rem;
 }
 
 .no-data {
-  color: #00cc33;
+  color: var(--text-tertiary);
   text-align: center;
-  padding: 2rem;
+  padding: 4rem 2rem;
   opacity: 0.6;
+  font-size: 0.9375rem;
 }
 </style>

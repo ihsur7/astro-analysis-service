@@ -17,11 +17,11 @@ const chartData = computed(() => {
   const labels = Object.keys(breakdown)
   const data = Object.values(breakdown)
 
-  // Generate varied green shades
+  // Generate varied blue shades
   const colors = labels.map((_, i) => {
-    const hue = 120 // Green
+    const hue = 220 + (i % 5) * 8
     const saturation = 70 + (i % 3) * 10
-    const lightness = 40 + (i % 5) * 8
+    const lightness = 50 + (i % 4) * 8
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`
   })
 
@@ -31,8 +31,8 @@ const chartData = computed(() => {
       {
         data,
         backgroundColor: colors,
-        borderColor: '#00ff41',
-        borderWidth: 1
+        borderColor: '#2d3548',
+        borderWidth: 2
       }
     ]
   }
@@ -45,19 +45,31 @@ const chartOptions = {
     legend: {
       position: 'right' as const,
       labels: {
-        color: '#00cc33',
+        color: '#a3a3a3',
         font: {
-          family: "'Courier New', monospace"
+          family: "system-ui, sans-serif",
+          size: 12,
+          weight: '500'
         },
-        padding: 10
+        padding: 12,
+        boxWidth: 12,
+        boxHeight: 12
       }
     },
     tooltip: {
-      backgroundColor: 'rgba(0, 26, 13, 0.95)',
-      titleColor: '#00ff41',
-      bodyColor: '#00ff41',
-      borderColor: '#00ff41',
+      backgroundColor: 'rgba(26, 26, 26, 0.95)',
+      titleColor: '#f5f5f5',
+      bodyColor: '#d4d4d4',
+      borderColor: '#888888',
       borderWidth: 1,
+      padding: 12,
+      titleFont: {
+        size: 13,
+        weight: '600'
+      },
+      bodyFont: {
+        size: 13
+      },
       callbacks: {
         label: function(context: any) {
           const label = context.label || ''
@@ -81,14 +93,16 @@ const chartOptions = {
 
 <style scoped>
 .chart-container {
-  height: 300px;
+  height: 320px;
   position: relative;
+  padding: 0.5rem;
 }
 
 .no-data {
-  color: #00cc33;
+  color: var(--text-tertiary);
   text-align: center;
-  padding: 2rem;
+  padding: 4rem 2rem;
   opacity: 0.6;
+  font-size: 0.9375rem;
 }
 </style>
