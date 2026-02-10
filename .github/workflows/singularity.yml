@@ -1,0 +1,52 @@
+name: Build Singularity Image
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-singularity:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Singularity
+      uses: eWaterCycle/setup-singularity@v7
+      with:
+        singularity-version: 3.11.0
+
+    - name: Build Singularity image from Docker
+      run: |
+        # Build Docker image first
+        docker build -t astro-analysis-service:latest .
+        
+        # Convert to Singularity
+        sudo singularity build astro-analysis.sif docker-daemon://astro-analysis-service:latest
+
+    - name: Test Singularity image
+      run: |
+        # Basic test - check if image runs
+        singularity exec astro-analysis.sif python --version
+        singularity exec astro-analysis.sif pip list
+
+    - name: Upload Singularity image as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: singularity-image
+        path: astro-analysis.sif
+        retention-days: 30
+
+    - name: Release Singularity image
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: astro-analysis.sif
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
