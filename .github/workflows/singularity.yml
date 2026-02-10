@@ -10,28 +10,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/singularity/singularity:v3.11.4-slim
+      options: --privileged
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Apptainer
-      uses: eWaterCycle/setup-apptainer@v2
-      with:
-        apptainer-version: 1.2.5
-
-    - name: Build from definition file
+    - name: Build Singularity image
       run: |
-        apptainer build --force --fakeroot astro-analysis.sif Singularity.def
+        singularity build astro-analysis.sif Singularity.def
 
     - name: Test image
       run: |
-        apptainer exec astro-analysis.sif python --version
-        apptainer exec astro-analysis.sif pip list | grep -E "(fastapi|uvicorn)" || true
+        singularity exec astro-analysis.sif python --version
+        singularity exec astro-analysis.sif pip list | grep -E "(fastapi|uvicorn)" || true
         
     - name: Show image metadata
       run: |
-        apptainer inspect astro-analysis.sif
+        singularity inspect astro-analysis.sif
         ls -lh astro-analysis.sif
 
     - name: Get version tag
