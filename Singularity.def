@@ -3,10 +3,9 @@ From: python:3.11-slim
 
 %files
     requirements.txt /app/requirements.txt
-    app /app/app
-    static /app/static
-    templates /app/templates
-    data /app/data
+    astro_analysis_service /app/astro_analysis_service
+    tests /app/tests
+    pyproject.toml /app/pyproject.toml
 
 %post
     apt-get update && apt-get install -y --no-install-recommends \
@@ -36,11 +35,11 @@ From: python:3.11-slim
     echo "Starting astro-analysis-service on port ${PORT:-8000}"
     echo "Web UI available at: http://localhost:${PORT:-8000}/ui"
     echo "API docs at: http://localhost:${PORT:-8000}/docs"
-    exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+    exec uvicorn astro_analysis_service.main:app --host 0.0.0.0 --port ${PORT:-8000}
 
 %startscript
     cd /app
-    exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+    exec uvicorn astro_analysis_service.main:app --host 0.0.0.0 --port ${PORT:-8000}
 
 %test
     python --version
@@ -49,11 +48,10 @@ From: python:3.11-slim
     pip list | grep pandas
     pip list | grep pytest
     
-    test -d /app/app
-    test -d /app/static
-    test -d /app/templates
-    test -d /app/data
-    test -f /app/app/main.py
+    test -d /app/astro_analysis_service
+    test -d /app/tests
+    test -f /app/astro_analysis_service/main.py
+    test -f /app/pyproject.toml
     
     echo "All tests passed!"
 
