@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "astro-analysis-service"
-version = "0.1.0"
+version = "1.0.0"
 description = "FastAPI microservice for filtering astronomical objects and computing stats."
 authors = [{ name = "Your Name", email = "you@example.com" }]
 readme = "README.md"

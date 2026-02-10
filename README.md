@@ -1,5 +1,8 @@
 # Astro Analysis Service
 
+[![CI](https://github.com/ihsur7/astro-analysis-service/actions/workflows/ci.yml/badge.svg)](https://github.com/ihsur7/astro-analysis-service/actions/workflows/ci.yml)
+[![Build Singularity](https://github.com/ihsur7/astro-analysis-service/actions/workflows/singularity.yml/badge.svg)](https://github.com/ihsur7/astro-analysis-service/actions/workflows/singularity.yml)
+
 FastAPI microservice delivering real-time exoplanet system data from the NASA Exoplanet Archive. Provides filtered queries, statistical summaries, and a modern Vue 3 frontend for exploring thousands of confirmed exoplanet hosts.
 
 ## Features
@@ -28,7 +31,10 @@ FastAPI microservice delivering real-time exoplanet system data from the NASA Ex
 
 ### DevOps
 - **Docker** multi-stage build (frontend → backend → slim runtime)
-- **GitHub Actions CI** pipeline: backend tests → frontend build → Docker image
+- **Singularity/Apptainer** definition file for HPC deployments
+- **GitHub Actions CI** pipelines:
+  - Backend tests → frontend build → Docker image
+  - Singularity container build from definition file
 - **pytest suite** mocking NASA responses (8 passing tests, no external dependencies)
 
 ## Getting Started
@@ -180,19 +186,83 @@ pytest -q
 
 Expected output: `8 passed` (tests cover `/objects`, `/stats`, `/health`, `/ready`, NASA client retry logic).
 
-## Docker
+## Container Images
 
-### Build Image
+### Docker
+
+#### Build Image
 ```bash
 docker build -t astro-analysis-service .
 ```
 
-### Run Container
+#### Run Container
 ```bash
 docker run -p 8000:8000 astro-analysis-service
 ```
 
 Access API at `http://localhost:8000/docs`, SPA at `http://localhost:8000/`.
+
+### Singularity/Apptainer
+
+For HPC environments and reproducible scientific computing.
+
+#### Download Pre-built Image
+
+```bash
+# Download from GitHub Releases
+wget https://github.com/ihsur7/astro-analysis-service/releases/latest/download/astro-analysis.sif
+```
+
+#### Build from Definition File
+
+```bash
+# Requires root/sudo privileges
+singularity build astro-analysis.sif Singularity.def
+
+# Or using Apptainer
+apptainer build astro-analysis.sif Singularity.def
+```
+
+#### Build from Docker Image
+
+```bash
+# Build Docker image first
+docker build -t astro-analysis-service:latest .
+
+# Export to tar
+docker save astro-analysis-service:latest -o astro-analysis.tar
+
+# Convert to Singularity
+singularity build astro-analysis.sif docker-archive://astro-analysis.tar
+```
+
+#### Run Singularity Container
+
+```bash
+# Run the service (default port 8000)
+singularity run astro-analysis.sif
+
+# Custom port
+PORT=9000 singularity run astro-analysis.sif
+
+# With custom data directory binding
+singularity run --bind ./custom-data:/app/data astro-analysis.sif
+
+# Execute specific commands
+singularity exec astro-analysis.sif python -m pytest
+
+# Interactive shell
+singularity shell astro-analysis.sif
+
+# View help
+singularity run-help astro-analysis.sif
+```
+
+**Endpoints:**
+- Web UI: `http://localhost:8000/`
+- API Docs: `http://localhost:8000/docs`
+- Health Check: `http://localhost:8000/health`
+- Metrics: `http://localhost:8000/metrics`
 
 ## Architecture Notes
 

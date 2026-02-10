@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from prometheus_client import Gauge
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from .__version__ import __version__
 from .data_loader import load_objects
 from .logging_config import configure_logging
 from .models import HealthResponse, PaginatedObjectsResponse, ReadinessResponse, StatsResponse
@@ -37,7 +38,7 @@ DATASET_GAUGE = Gauge(
     "Number of astronomical objects currently cached and available to the API.",
 )
 
-app = FastAPI(title="Astro Analysis Service", version="0.1.0")
+app = FastAPI(title="Astro Analysis Service", version=__version__)
 
 if FRONTEND_DIST.exists():
     app.mount("/app", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="spa")
